@@ -13,15 +13,32 @@ License: GPLv2 or later
 Text Domain: alecaddd-plugin
  */
 
-
-if (!defined('ABSPATH')) {
-    die();
-}
+defined( 'ABSPATH' ) or die( 'Hey, what are you doing here? You silly human!' );
 
 if (file_exists(dirname(__FILE__).'/vendor/autoload.php')){
     require_once dirname(__FILE__).'/vendor/autoload.php';
 }
-define('PLUGIN_PATH',plugin_dir_path(__FILE__));
-if (class_exists('Inc\Init')){
-    Inc\Init::register_services(plugin_basename(__FILE__));
+
+use Inc\Base\Activate;
+use Inc\Base\Deactivate;
+
+/**
+ * The code that runs during plugin activation
+ */
+function activate_alecaddd_plugin() {
+    Activate::activate();
+}
+
+/**
+ * The code that runs during plugin deactivation
+ */
+function deactivate_alecaddd_plugin() {
+    Deactivate::deactivate();
+}
+
+register_activation_hook( __FILE__, 'activate_alecaddd_plugin' );
+register_deactivation_hook( __FILE__, 'deactivate_alecaddd_plugin' );
+
+if (class_exists('Inc\\Init')){
+    Inc\Init::register_services();
 }

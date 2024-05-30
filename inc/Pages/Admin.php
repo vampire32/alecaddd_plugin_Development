@@ -1,49 +1,105 @@
 <?php
-
 /**
- * @package AlecadddPlugin
+ * @package  AlecadddPlugin
  */
-
 namespace Inc\Pages;
 
-class Admin
-{
-    private $plugin;
+use Inc\Api\SettingsApi;
+use Inc\Base\BaseController;
+use Inc\Api\Callbacks\AdminCallbacks;
+use Inc\Api\Callbacks\ManagerCallbacks;
 
-    function __construct($plugin)
-    {
-        $this->plugin = $plugin;
-    }
+/**
+ *
+ */
+class Admin extends BaseController
+{
+    public $settings;
+
+    public $callbacks;
+
+    public $callbacks_mngr;
+
+    public $pages = array();
 
     public function register()
     {
-        add_action('admin_enqueue_scripts', array($this, 'enqueue'));
-        add_action('init', array($this, 'custom_post_type'));
-        add_action('admin_menu', array($this, 'add_admin_pages'));
-        add_filter("plugin_action_links_$this->plugin", array($this, 'setting_links'));
+        $this->settings = new SettingsApi();
+
+        $this->callbacks = new AdminCallbacks();
+
+        $this->callbacks_mngr = new ManagerCallbacks();
+
+        $this->setPages();
+
+        $this->setSettings();
+        $this->setSections();
+        $this->setFields();
+
+        $this->settings->addPages( $this->pages )->withSubPage( 'Dashboard' )->register();
     }
 
-    public function setting_links($links)
+    public function setPages()
     {
-        $setting_link = '<a href="admin.php?page=alecaddd_page">Settings</a>';
-        array_push($links, $setting_link);
-        return $links;
+        $this->pages = array(
+            array(
+                'page_title' => 'Alecaddd Plugin',
+                'menu_title' => 'Alecaddd',
+                'capability' => 'manage_options',
+                'menu_slug' => 'alecaddd_plugin',
+                'callback' => array( $this->callbacks, 'adminDashboard' ),
+                'icon_url' => 'dashicons-store',
+                'position' => 110
+            )
+        );
     }
 
-    public function add_admin_pages()
+    public function setSettings()
     {
-        add_menu_page('Alecaddd Plugin', 'Alecaddd', 'manage_options', 'alecaddd_page', array($this, 'admin_index'), 'dashicons-store', 110);
+        $args = array(
+            array(
+                'option_group' => 'alecaddd_plugin_settings',
+                'option_name' => 'alecaddd_plugin',
+                'callback' => array( $this->callbacks_mngr, 'checkboxSanitize' )
+            )
+        );
+
+        $this->settings->setSettings( $args );
     }
 
-    public function admin_index()
+    public function setSections()
     {
-        require_once PLUGIN_PATH . 'templates/admin.php';
+        $args = array(
+            array(
+                'id' => 'alecaddd_admin_index',
+                'title' => 'Settings Manager',
+                'callback' => array( $this->callbacks_mngr, 'adminSectionManager' ),
+                'page' => 'alecaddd_plugin'
+            )
+        );
+
+        $this->settings->setSections( $args );
     }
-   public  function custom_post_type() {
-        register_post_type('book', ['public' => true, 'label' => 'Books']);
-    }
-     public function enqueue() {
-        wp_enqueue_style('mypluginstyle', plugins_url('/assets/style.css', __FILE__));
-        wp_enqueue_script('mypluginscript', plugins_url('/assets/index.js', __FILE__));
+
+    public function setFields()
+    {
+        $args = array();
+
+        foreach ( $this->managers as $key => $value ) {
+            $args[] = array(
+                'id' => $key,
+                'title' => $value,
+                'callback' => array( $this->callbacks_mngr, 'checkboxField' ),
+                'page' => 'alecaddd_plugin',
+                'section' => 'alecaddd_admin_index',
+                'args' => array(
+                    'option_name' => 'alecaddd_plugin',
+                    'label_for' => $key,
+                    'class' => 'ui-toggle'
+                )
+            );
+        }
+
+        $this->settings->setFields( $args );
     }
 }
