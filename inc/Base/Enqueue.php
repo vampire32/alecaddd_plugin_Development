@@ -4,10 +4,10 @@
  */
 namespace Inc\Base;
 
-use \Inc\Base\BaseController;
+use Inc\Base\BaseController;
 
 /**
- * Enqueue class to handle script and style enqueues
+ *
  */
 class Enqueue extends BaseController
 {
@@ -15,8 +15,11 @@ class Enqueue extends BaseController
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
     }
 
-    public function enqueue() {
-        error_log('Enqueue method called');
+    function enqueue() {
+        // enqueue all our scripts
+
+        wp_enqueue_script( 'media-upload' );
+        wp_enqueue_media();
         wp_enqueue_style( 'mypluginstyle', $this->plugin_url . 'assets/style.css' );
         wp_enqueue_script( 'mypluginscript', $this->plugin_url . 'assets/index.js' );
     }
